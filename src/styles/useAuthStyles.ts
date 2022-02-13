@@ -1,4 +1,4 @@
-import { makeStyles } from "@material-ui/core";
+import { makeStyles } from '@material-ui/core'
 
 export const useAuthStyles = makeStyles((theme) => ({
     root: {
@@ -27,6 +27,15 @@ export const useAuthStyles = makeStyles((theme) => ({
         marginTop: theme.spacing(1),
     },
     submit: {
-        margin: theme.spacing(3, 0, 2),
+        margin: theme.spacing(3, 0, 1),
+    },
+    modal: {
+        outlined: 'none',
+        position: 'absolute',
+        width: 400,
+        borderRadius: 10,
+        backgroundColor: 'white',
+        boxShadow: theme.shadows[5],
+        padding: theme.spacing(10),
     },
 }))

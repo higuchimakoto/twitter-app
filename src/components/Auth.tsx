@@ -1,14 +1,36 @@
 import React, { useEffect } from 'react'
 import { useAuthStyles } from '../styles/useAuthStyles'
+import { css } from '@emotion/react'
 
-import { Avatar, Button, CssBaseline, Grid, Paper, TextField, Typography } from '@material-ui/core'
+import {
+    Avatar,
+    Box,
+    Button,
+    CssBaseline,
+    Grid,
+    IconButton,
+    Modal,
+    Paper,
+    TextField,
+    Typography,
+} from '@material-ui/core'
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined'
 import { auth, provider, storage } from '../firebase'
 import { useState } from 'react'
-import { EmailOutlined } from '@material-ui/icons'
-import { SetterOrUpdater, useSetRecoilState } from 'recoil'
+import { AccountCircle, Camera, EmailOutlined, SendOutlined } from '@material-ui/icons'
+import { useSetRecoilState } from 'recoil'
 import { authState } from '../states/authState'
-import { User } from '../types/user'
+
+const getModalStyle = () => {
+    const top = 50
+    const left = 50
+
+    return {
+        top: `${top}%`,
+        left: `${left}%`,
+        transform: `translate(-${top}%, -${left}%)`,
+    }
+}
 
 export const Auth = () => {
     const classes = useAuthStyles()
@@ -18,6 +40,21 @@ export const Auth = () => {
     const [username, setUsername] = useState('')
     const [avatarImage, setAvatarImage] = useState<File | null>(null)
     const setAuthUser = useSetRecoilState(authState)
+    const [openModal, setOpenModal] = useState(false)
+    const [resetEmail, setResetEmail] = useState('')
+
+    const sendResetEmail = async (e: React.MouseEvent<HTMLElement>) => {
+        await auth
+            .sendPasswordResetEmail(resetEmail)
+            .then(() => {
+                setOpenModal(false)
+                setResetEmail('')
+            })
+            .catch((err) => {
+                alert(err.message)
+                setResetEmail('')
+            })
+    }
 
     const onChangeImageHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
         // nullまたはundifinedではないと通知する
@@ -71,6 +108,36 @@ export const Auth = () => {
                         {isLogin ? 'Login' : 'Register'}
                     </Typography>
                     <form className={classes.form} noValidate>
+                        {!isLogin && (
+                            <>
+                                <TextField
+                                    variant="outlined"
+                                    margin="normal"
+                                    required
+                                    fullWidth
+                                    id="username"
+                                    label="Username"
+                                    name="username"
+                                    autoComplete="username"
+                                    autoFocus
+                                    value={username}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                        setUsername(e.target.value)
+                                    }}
+                                />
+                                <Box textAlign="center">
+                                    <IconButton>
+                                        <label>
+                                            <AccountCircle
+                                                fontSize="large"
+                                                css={avatarImage ? login_addIconLoaded : login_addIcon}
+                                            />
+                                            <input css={login_hiddenIcon} type="file" onChange={onChangeImageHandler} />
+                                        </label>
+                                    </IconButton>
+                                </Box>
+                            </>
+                        )}
                         <TextField
                             variant="outlined"
                             margin="normal"
@@ -98,6 +165,11 @@ export const Auth = () => {
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                         />
                         <Button
+                            disabled={
+                                isLogin
+                                    ? !email || password.length < 6
+                                    : !username || !email || password.length < 6 || !avatarImage
+                            }
                             fullWidth
                             variant="contained"
                             color="primary"
@@ -125,10 +197,12 @@ export const Auth = () => {
                         </Button>
                         <Grid container>
                             <Grid item xs>
-                                <span>Forgot password?</span>
+                                <span css={login_reset} onClick={() => setOpenModal(true)}>
+                                    Forgot password?
+                                </span>
                             </Grid>
                             <Grid item>
-                                <span onClick={() => setIsLogin(!isLogin)}>
+                                <span css={login_toggleMode} onClick={() => setIsLogin(!isLogin)}>
                                     {isLogin ? 'Create new account ?' : 'Back to login'}
                                 </span>
                             </Grid>
@@ -137,14 +211,62 @@ export const Auth = () => {
                             fullWidth
                             variant="contained"
                             color="primary"
+                            startIcon={<Camera/>}
                             className={classes.submit}
                             onClick={signInGoogle}
                         >
                             SignIn With Google
                         </Button>
                     </form>
+                    <Modal open={openModal} onClose={() => setOpenModal(false)}>
+                        <div style={getModalStyle()} className={classes.modal}>
+                            <div css={login_modal}>
+                                <TextField
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                    type="email"
+                                    name="email"
+                                    label="Reset E-mail"
+                                    value={resetEmail}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResetEmail(e.target.value)}
+                                />
+                                <IconButton onClick={sendResetEmail}>
+                                    <SendOutlined />
+                                </IconButton>
+                            </div>
+                        </div>
+                    </Modal>
                 </div>
             </Grid>
         </Grid>
     )
 }
+
+const login_toggleMode = css`
+    cursor: pointer;
+    color: #0000ff;
+`
+
+const login_modal = css`
+    text-align: center;
+`
+
+const login_reset = css`
+    cursor: pointer;
+`
+
+const login_hiddenIcon = css`
+    text-align: center;
+    display: none;
+`
+
+const login_addIcon = css`
+    cursor: pointer;
+    color: gray;
+`
+
+const login_addIconLoaded = css`
+    cursor: pointer;
+    color: whitesmoke;
+`
