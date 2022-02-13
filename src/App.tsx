@@ -1,26 +1,46 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from 'react'
+import { css } from '@emotion/react'
+import { Auth } from './components/Auth'
+import { useRecoilState } from 'recoil'
+import { authState } from './states/authState'
+import { useEffect } from 'react'
+import { auth } from './firebase'
+import { Feed } from './components/Feed'
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+const App: React.FC = () => {
+    const [user, setUser] = useRecoilState(authState)
+    console.log('👉 user', user)
+    useEffect(() => {
+        const unSub = auth.onAuthStateChanged((authUser) => {
+            if (authUser) {
+                setUser({ id: authUser.uid })
+            } else {
+                setUser({ id: '' })
+            }
+        })
+        return () => {
+            unSub()
+        }
+    }, [setUser])
+    return (
+        <>
+            {user.id ? (
+                <div css={cssApp}>
+                    <Feed />
+                </div>
+            ) : (
+                <Auth />
+            )}
+        </>
+    )
 }
 
-export default App;
+const cssApp = css`
+    .app {
+        display: flex;
+        height: 100vh;
+        padding: 30px 80px;
+        background-color: #444447;
+    }
+`
+export default App
